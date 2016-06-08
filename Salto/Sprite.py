@@ -1,35 +1,30 @@
 import pygame
-
-echo "# Platform-Game" >> README.md
-git init
-git add README.md
-git commit -m "first commit"
-git remote add origin https://github.com/juanvarco95/Platform-Game.git
-git push -u origin master
+import random
  
 #CONSTANTES 
-ANCHO=800 
-ALTO=600 
-X0=ANCHO/2 
-Y0=ALTO/2 
-CX=(X0,Y0) 
-Xmin=0 
-Xmax=ANCHO 
-Ymin=0 
-Ymax=ALTO 
+ANCHO = 800 
+ALTO = 600 
+X0 = ANCHO/2 
+Y0 = ALTO/2 
+CX = (X0,Y0) 
+Xmin = 0 
+Xmax = ANCHO 
+Ymin = 0 
+Ymax = ALTO 
 x = 0 
 y = 0 
 xb = 0 
 yb = 0 
  
 #COLORES 
-Blanco=(255,255,255) 
-Gris=(224,224,224) 
-Rojo=(255,0,0) 
-Azul=(0,0,255) 
-Negro=(0,0,0) 
-Verde=(0,255,0) 
-Azul_Claro=(35,169,149)
+Blanco = (255,255,255) 
+Gris = (224,224,224) 
+Rojo = (255,0,0) 
+Azul = (0,0,255) 
+Negro = (0,0,0) 
+Verde = (0,255,0) 
+Azul_Claro = (35,169,149)
+Negro_Fondo = (48,53,77)
  
 # Dimensiones de la pantalla
 LARGO_PANTALLA = 800
@@ -38,10 +33,9 @@ ALTO_PANTALLA = 600
 class Jugador(pygame.sprite.Sprite): 
     cambio_x = 0
     cambio_y = 0
-    def __init__(self):  
-        pygame.sprite.Sprite.__init__(self) 
-        self.image = pygame.Surface([20, 20])
-        self.image.fill(Rojo)        
+    def __init__(self, image):  
+        pygame.sprite.Sprite.__init__(self)  
+        self.image = pygame.image.load(image).convert_alpha() 
         self.rect = self.image.get_rect() 
     def update(self): 
         self.calc_grav()
@@ -87,73 +81,113 @@ class Jugador(pygame.sprite.Sprite):
  
     def stop(self):
         self.cambio_x = 0
+
+class Luz_Camara(pygame.sprite.Sprite): 
+    def __init__(self, image): 
+        pygame.sprite.Sprite.__init__(self) 
+        self.image = pygame.image.load(image).convert_alpha() 
+        self.rect = self.image.get_rect()
+        self.disparar = random.randrange(100) 
+        self.direccion = 0 
+ 
+    def update(self): 
+        if self.rect.y >= (ALTO - 20): 
+            self.direccion = 1 
+        if self.rect.y <= 10: 
+            self.direccion = 0 
+ 
+        if self.direccion == 0: 
+            self.rect.y += 5 
+        else: 
+            self.rect.y -= 5
+        self.disparar -= 1
+        if self.disparar < 0:
+            self.disparar = random.randrange(100)
                     
 class Plataforma(pygame.sprite.Sprite):
-    def __init__(self, largo, alto ):
-        pygame.sprite.Sprite.__init__(self)
-        self.image = pygame.Surface([largo, alto])
-        self.image.fill(Verde)             
+    def __init__(self, image):
+        pygame.sprite.Sprite.__init__(self) 
+        self.image = pygame.image.load(image).convert_alpha() 
         self.rect = self.image.get_rect()
   
-class Muro(pygame.sprite.Sprite):    
-    def __init__(self, x, y):
+class Fondo(pygame.sprite.Sprite):    
+    def __init__(self, image, x, y):
         pygame.sprite.Sprite.__init__(self)
-        self.image = pygame.Surface([30,40])
-        self.image.fill(Verde)
+        self.image = pygame.image.load(image).convert_alpha() 
         self.rect = self.image.get_rect()
-        self.rect.x = x
-        self.rect.y = y
-        self.paredes = pygame.sprite.Group()
-class Nivel(object):
-    """ Esta es una super clase generica usada para definir un nivel.
-        Crea una clase hija especifica para cada nivel con una info especifica. """
-         
+   
+        #self.paredes = pygame.sprite.Group()
+        
+class Nivel(object):     
     def __init__(self, Jugador):
         """ Constructor. Requerido para cuando las plataformas moviles colisionan con el protagonista. """
         self.listade_plataformas = pygame.sprite.Group()
         self.listade_enemigos = pygame.sprite.Group()
         self.Jugador = Jugador
-         
-        # Imagen de fondo
-    imagende_fondo = None
-     
+        self.listade_imagenes = pygame.sprite.Group()
+        
+    mov_fondo = 0 
     # Actualizamos todo en este nivel
     def update(self):
         self.listade_plataformas.update()
         self.listade_enemigos.update()
+        self.listade_imagenes.update()
      
     def draw(self, pantalla):
-        pantalla.fill(Blanco)
+        pantalla.fill(Negro_Fondo)
         self.listade_plataformas.draw(pantalla)
         self.listade_enemigos.draw(pantalla)
+        self.listade_imagenes.draw(pantalla)
  
-''     
+    def Mover_fondo(self, mov_x):
+        self.mov_fondo += mov_x
+        for plataforma in self.listade_plataformas:
+            plataforma.rect.x += mov_x
+        for enemigo in self.listade_enemigos:
+            enemigo.rect.x += mov_x
+        for imagenes in self.listade_imagenes:
+            plataforma.rect.x += mov_x
+        
 # Creamos las plataformas para el nivel
 class Nivel_01(Nivel):
-    """ Definicion para el nivel 1. """
  
     def __init__(self, Jugador):
-        """ Creamos el nivel 1. """
-         
-        # llamamos al constructor padre
+        
         Nivel.__init__(self, Jugador)
+        self.limite = -1000
          
-        # Array con la informacion sobre el largo, alto, x, e y
-        nivel = [ [70, 50, 500, 500],
-                  [70, 50, 500, 500],
-                  [70, 50, 500, 500],
-                  [70, 50, 500, 500],
-                  [70, 50, 500, 500],
-                  [70, 50, 500, 500]
+        
+        nivel = [[0,0],[0,20],[0,40],
+                 [0,60],[0,80],[0,100],
+                 [0,120],[0,140],[0,160],
+                 [0,180],[0,200],[0,220],
+                 [0,240],[0,260],[0,280],
+                 [0,300],[0,320],[0,340],
+                 [0,360],[0,380],[0,400],
+                 [0,420],[0,440],[0,460],
+                 [0,480],[0,500],[0,520],
+                 [0,540],
+                                
+                ]
+        ncamara =[[1400,0]
                   ]
- 
-        # Iteramos sobre el array anterior y anadimos plataformas
-        for plataforma in nivel:
-            bloque = Plataforma(plataforma[0], plataforma[1])
-            bloque.rect.x = plataforma[2]
-            bloque.rect.y = plataforma[3]
+        
+        for camara in ncamara:
+            bloque = Plataforma("Fondo/camara1.png")
+            bloque.rect.x = camara[0]
+            bloque.rect.y = camara[1]
             bloque.Jugador = self.Jugador
             self.listade_plataformas.add(bloque)
+        
+        # Iteramos sobre el array anterior y anadimos plataformas
+        for cuadro in nivel:
+            bloque = Plataforma("Cuadrado.png")
+            bloque.rect.x = cuadro[0]
+            bloque.rect.y = cuadro[1]
+            bloque.Jugador = self.Jugador
+            self.listade_plataformas.add(bloque)
+        
+        
             
 class Nivel_02(Nivel):
     """ Definicion para el nivel 1. """
@@ -163,19 +197,33 @@ class Nivel_02(Nivel):
          
         # llamamos al constructor padre
         Nivel.__init__(self, Jugador)
-         
+        self.limite=-1000 
         # Array con la informacion sobre el largo, alto, x, e y
-        nivel = [ [70, 50, 500, 500],
-                  [70, 50, 600, 500]
+        nivel = [ [ 500, 500],
+                  [ 600, 500]
                   ]
  
         # Iteramos sobre el array anterior y anadimos plataformas
         for plataforma in nivel:
-            bloque = Plataforma(plataforma[0], plataforma[1])
-            bloque.rect.x = plataforma[2]
-            bloque.rect.y = plataforma[3]
+            bloque = Plataforma("Cuadrado.png")
+            bloque.rect.x = plataforma[0]
+            bloque.rect.y = plataforma[1]
             bloque.Jugador = self.Jugador
             self.listade_plataformas.add(bloque)                      
+ 
+def cargar_fondo(archivo, ancho, alto):
+        imagen = pygame.image.load(archivo).convert()
+        imagen_ancho, imagen_alto = imagen.get_size()
+        #print 'ancho: ', imagen_ancho, ' xmax: ', imagen_ancho/ancho
+        #print 'alto: ', imagen_alto, 'ymax: ', imagen_alto/alto
+        tabla_fondos = []
+        for fondo_x in range(0, imagen_ancho/ancho):
+                linea = []
+                tabla_fondos.append(linea)
+                for fondo_y in range(0, imagen_alto/alto):
+                        cuadro = (fondo_x * ancho, fondo_y * alto, ancho, alto)
+                        linea.append(imagen.subsurface(cuadro))
+        return tabla_fondos 
  
 def main():
     """ Programa Principal """
@@ -188,7 +236,9 @@ def main():
     pygame.display.set_caption("Saltador de Plataformas") 
      
     # Creamos al protagonista
-    jugador = Jugador()
+    jugador = Jugador("Stickman/StickdePie.png")
+    jugS = pygame.image.load('Stickman/StickS.png')
+    
  
     # Creamos todos los niveles
     listade_niveles = []
@@ -211,8 +261,10 @@ def main():
        
     reloj = pygame.time.Clock() 
        
-    
+    i = 0
     while not Terminar: 
+        jug = cargar_fondo("Stickman/Stickman.png",98,120)
+        
         for evento in pygame.event.get():  
             if evento.type == pygame.QUIT:
                 Terminar = True 
@@ -220,10 +272,13 @@ def main():
                 if evento.key == pygame.K_LEFT:
                     jugador.ir_izquierda()
                 if evento.key == pygame.K_RIGHT:
-                    jugador.ir_derecha()
+                    jugador.ir_derecha()        
                 if evento.key == pygame.K_UP:
+                    pantalla.blit(jugS,(jugador.rect.x,jugador.rect.y))
                     jugador.saltar()
-                     
+                if evento.key == pygame.K_ESCAPE:
+                    pass
+                
             if evento.type == pygame.KEYUP:
                 if evento.key == pygame.K_LEFT and jugador.cambio_x < 0: 
                     jugador.stop()
@@ -240,10 +295,41 @@ def main():
         
         if jugador.rect.left < 0:
             jugador.rect.left = 0
-              
+        
+        ls_todos.update()
+    
+        # Actualizamos elementos en el nivel
+        nivel_actual.update()
+        
+        #  Si el jugador se aproxima al limite derecho de la pantalla (-x)
+        if jugador.rect.x >= 500:
+            dif = jugador.rect.x - 500
+            jugador.rect.x = 500
+            nivel_actual.Mover_fondo(-dif)
+
+        # Si el jugador se aproxima al limite izquierdo de la pantalla (+x)
+        if jugador.rect.x <= 120:
+           dif = 120 - jugador.rect.x
+           jugador.rect.x = 120
+           nivel_actual.Mover_fondo(dif)
+           
+        #Si llegamos al final del nivel
+        pos_actual=jugador.rect.x + nivel_actual.mov_fondo
+        if pos_actual < nivel_actual.limite:
+           jugador.rect.x=120
+           if nivel_actual_no < len(listade_niveles)-1:
+              nivel_actual_no += 1
+              nivel_actual = listade_niveles[nivel_actual_no]
+              jugador.nivel=nivel_actual
+
+        # Dibujamos y refrescamos
+        pantalla.fill(Negro_Fondo)
+        nivel_actual.draw(pantalla)
+        ls_todos.draw(pantalla)     
         nivel_actual.draw(pantalla)
         ls_todos.draw(pantalla) 
-        reloj.tick(60) 
+        
+        reloj.tick(30) 
         pygame.display.flip() 
            
     pygame.quit()
